@@ -10,10 +10,30 @@
 [CmdletBinding()]
 param
 (
-    [Parameter(Mandatory=$true)]
+    # Interactive sign in using, use this option normally
+    [Parameter(
+        Mandatory=$true,
+        ParameterSetName="Interactive"
+    )]
     [string]
     $AdminUPN,
 
+    # For use when doing non-interactive sign in or script testing
+    [Parameter(
+        Mandatory=$true,
+        ParameterSetName="NonInteractive"
+    )]
+    [string]
+    $PasswordFilePath,
+
+    [Parameter(
+        Mandatory=$true,
+        ParameterSetName="NonInteractive"
+    )]
+    [string]
+    $Username,
+
+    # Output file location
     [Parameter(Mandatory=$true)]
     [string]
     $Path
@@ -21,8 +41,14 @@ param
 
 function Start-MSCloudIdSession
 {
-
-    Connect-AzureAD -AccountId $AdminUPN
+    if ($AdminUPN) {
+        Connect-AzureAD -AccountId $AdminUPN
+    }
+    elseif ($PasswordFilePath) {
+        $password = Get-Content $PasswordFilePath | ConvertTo-SecureString
+        $credential = New-Object System.Management.Automation.PsCredential($Username, $password)
+        Connect-AzureAD -Credential $Credential
+    }
 }
 
 <# 
@@ -124,6 +150,14 @@ Function Get-MSCloudIdConsentGrantList
                     $principal = GetObjectByObjectId -ObjectId $grant.PrincipalId
                     $principalDisplayName = $principal.DisplayName
                 }
+                $Risk = @()
+                if ($grant.Scope -like "*write*" -and $grant.Scope -like "*all*") {
+                    $Risk = "HighRisk"
+                } elseif ($grant.Scope -like "*write*" -and $grant.Scope -notlike "*all*") {
+                    $Risk = "MediumRisk"
+                } else {
+                    $Risk = "LowRisk"
+                }
 
                 New-Object PSObject -Property ([ordered]@{
                     "PermissionType" = "Delegated"
@@ -138,6 +172,8 @@ Function Get-MSCloudIdConsentGrantList
                     "ConsentType" = $grant.ConsentType
                     "PrincipalObjectId" = $grant.PrincipalId
                     "PrincipalDisplayName" = $principalDisplayName
+
+                    "Risk" = $Risk
                 })
             }
         }
@@ -155,6 +191,14 @@ Function Get-MSCloudIdConsentGrantList
             $client = GetObjectByObjectId -ObjectId $assignment.PrincipalId
             $resource = GetObjectByObjectId -ObjectId $assignment.ResourceId            
             $appRole = $resource.AppRoles | Where-Object { $_.Id -eq $assignment.Id }
+            $Risk = @()
+            if ($grant.Scope -like "*write*" -and $grant.Scope -like "*all*") {
+                $Risk = "HighRisk"
+            } elseif ($grant.Scope -like "*write*" -and $grant.Scope -notlike "*all*") {
+                $Risk = "MediumRisk"
+            } else {
+                $Risk = "LowRisk"
+            }
 
             New-Object PSObject -Property ([ordered]@{
                 "PermissionType" = "Application"
@@ -165,6 +209,8 @@ Function Get-MSCloudIdConsentGrantList
                 "ResourceObjectId" = $assignment.ResourceId
                 "ResourceDisplayName" = $resource.DisplayName
                 "Permission" = $appRole.Value
+
+                "Risk" = $Risk
             })
         }
     }
@@ -186,26 +232,23 @@ else {
 }
 
 Import-Module AzureAD
-Import-Module AzureADPreview -ErrorAction SilentlyContinue
 Import-Module ImportExcel
 
 Start-MSCloudIdSession -AdminUPN $AdminUPN
 
 $data = Get-MSCloudIdConsentGrantList
 
-<#
-foreach ($item in $data) {
-    if ($item.Permission -like "*write*" -and $item.Permission -notlike "*all*") {
-        $item += 
-    }
+# Rename the existing output file if it already exists
+$OutputFileExists = Test-Path $Path
+if ($OutputFileExists -eq $true) {
+    Get-ChildItem $Path | Remove-Item -Force
 }
-/#>
 
 # Permissions per App Table and Chart
 $pt = New-PivotTableDefinition -SourceWorkSheet ConsentGrantData `
         -PivotTableName "PermissionsPerApp" `
         -PivotFilter ConsentType,PrincipalDisplayName `
-        -PivotRows ResourceDisplayName,Permission `
+        -PivotRows Risk,ResourceDisplayName,Permission `
         -PivotColumns PermissionType `
         -PivotData @{Permission='Count'} `
         -IncludePivotChart `

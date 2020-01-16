@@ -238,7 +238,7 @@ Start-MSCloudIdSession -AdminUPN $AdminUPN
 
 $data = Get-MSCloudIdConsentGrantList
 
-# Rename the existing output file if it already exists
+# Delete the existing output file if it already exists
 $OutputFileExists = Test-Path $Path
 if ($OutputFileExists -eq $true) {
     Get-ChildItem $Path | Remove-Item -Force

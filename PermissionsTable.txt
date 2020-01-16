@@ -1,105 +1,106 @@
-Analytics.Read
-AdministrativeUnit.Read.All
-AdministrativeUnit.ReadWrite.All
-AppCatalog.ReadWrite.All
-Application.Read.All
-Application.ReadWrite.All
-Application.ReadWrite.OwnedBy
-Bookings.Read.All
-Bookings.ReadWrite.Appointments
-Bookings.ReadWrite.All
-Bookings.Manage
-Calendars.Read
-Calendars.Read.Shared
-Calendars.ReadWrite
-Calendars.Send
-Calls.Initiate.All
-Calls.InitiateGroupCall.All
-Calls.JoinGroupCall.All
-Calls.JoinGroupCallasGuest.All
-Calls.AccessMedia.All
-Contacts.Read
-Contacts.ReadWrite
-Device.ReadWrite.All
-Directory.Read.All
-Directory.ReadWrite.All
-EduAssignments.Read
-EduAssignments.ReadWriteBasic
-EduRoster.ReadBasic
-Files.Read
-Files.Read.All
-Files.ReadWrite
-Files.ReadWrite.All
-Files.ReadWrite.AppFolder
-Group.Read.All
-Group.ReadWrite.All
-GroupMember.ReadWrite.All
-Group.Create
-IdentityProvider.Read.All
-IdentityProvider.ReadWrite.All
-DeviceManagementServiceConfiguration.Read.All
-DeviceManagementServiceConfiguration.ReadWrite.All
-DeviceManagementConfiguration.Read.All
-DeviceManagementConfiguration.ReadWrite.All
-DeviceManagementApps.Read.All
-DeviceManagementApps.ReadWrite.All
-DeviceManagementRBAC.Read.All
-DeviceManagementRBAC.ReadWrite.All
-DeviceManagementManagedDevices.Read.All
-DeviceManagementManagedDevices.ReadWrite.All
-DeviceManagementManagedDevices.PrivilegedOperations.All
-Mail.Read
-Mail.Read.Shared
-Mail.ReadWrite
-Mail.Send
-MailboxSettings.ReadWrite
-MailboxSettings.Read
-Member.Read.Hidden
-Notes.Create
-Notes.Read
-Notes.Read.All
-Notes.ReadWrite
-Notes.ReadWrite.All
-Notifications.ReadWrite.CreatedByApp
-OnlineMeetings.Read
-OnlineMeetings.ReadWrite
-OnlineMeetings.Read.All
-Organization.Read.All
-Organization.ReadWrite.All
-OrgContact.Read.All
-People.Read
-People.Read.All
-Policy.Read.All
-Policy.ReadWrite.ConditionalAccess
-Policy.ReadWrite.FeatureRollout
-Policy.ReadWrite.TrustFramework
-Presence.Read
-Presence.Read.All
-Reports.Read.All
-RoleManagement.Read.Directory
-RoleManagement.ReadWrite.Directory
-ExternalItem.Read.All
-SecurityEvents.Read.All
-SecurityEvents.ReadWrite.All
-Sites.Read.All
-Sites.ReadWrite.All
-Sites.Manage.All
-Sites.FullControl.All
-Tasks.Read
-Tasks.Read.Shared
-Tasks.ReadWrite
-Tasks.ReadWrite.Shared
-Agreement.Read.All
-Agreement.ReadWrite.All
-AgreementAcceptance.Read
-ThreatAssessment.ReadWrite.All
-ThreatAssessment.Read.All
-User.Read
-User.ReadWrite
-User.ReadBasic.All
-User.Read.All
-User.ReadWrite.All
-UserActivity.ReadWrite.CreatedByApp
-user_impersonation
-full_access_as_user
-full_access_as_app
+$permtable = @()
+$permtable += @{ Permission = "Analytics.Read"},
+$permtable += @{ Permission = "AdministrativeUnit.Read.All"},
+$permtable += @{ Permission = "AdministrativeUnit.ReadWrite.All"},
+$permtable += @{ Permission = "AppCatalog.ReadWrite.All"},
+$permtable += @{ Permission = "Application.Read.All"},
+$permtable += @{ Permission = "Application.ReadWrite.All"},
+$permtable += @{ Permission = "Application.ReadWrite.OwnedBy"},
+$permtable += @{ Permission = "Bookings.Read.All"},
+$permtable += @{ Permission = "Bookings.ReadWrite.Appointments"},
+$permtable += @{ Permission = "Bookings.ReadWrite.All"},
+$permtable += @{ Permission = "Bookings.Manage"},
+$permtable += @{ Permission = "Calendars.Read"},
+$permtable += @{ Permission = "Calendars.Read.Shared"},
+$permtable += @{ Permission = "Calendars.ReadWrite"},
+$permtable += @{ Permission = "Calendars.Send"},
+$permtable += @{ Permission = "Calls.Initiate.All"},
+$permtable += @{ Permission = "Calls.InitiateGroupCall.All"},
+$permtable += @{ Permission = "Calls.JoinGroupCall.All"},
+$permtable += @{ Permission = "Calls.JoinGroupCallasGuest.All"},
+$permtable += @{ Permission = "Calls.AccessMedia.All"},
+$permtable += @{ Permission = "Contacts.Read"},
+$permtable += @{ Permission = "Contacts.ReadWrite"},
+$permtable += @{ Permission = "Device.ReadWrite.All"},
+$permtable += @{ Permission = "Directory.Read.All"},
+$permtable += @{ Permission = "Directory.ReadWrite.All"},
+$permtable += @{ Permission = "EduAssignments.Read"},
+$permtable += @{ Permission = "EduAssignments.ReadWriteBasic"},
+$permtable += @{ Permission = "EduRoster.ReadBasic"},
+$permtable += @{ Permission = "Files.Read"},
+$permtable += @{ Permission = "Files.Read.All"},
+$permtable += @{ Permission = "Files.ReadWrite"},
+$permtable += @{ Permission = "Files.ReadWrite.All"},
+$permtable += @{ Permission = "Files.ReadWrite.AppFolder"},
+$permtable += @{ Permission = "Group.Read.All"},
+$permtable += @{ Permission = "Group.ReadWrite.All"},
+$permtable += @{ Permission = "GroupMember.ReadWrite.All"},
+$permtable += @{ Permission = "Group.Create"},
+$permtable += @{ Permission = "IdentityProvider.Read.All"},
+$permtable += @{ Permission = "IdentityProvider.ReadWrite.All"},
+$permtable += @{ Permission = "DeviceManagementServiceConfiguration.Read.All"},
+$permtable += @{ Permission = "DeviceManagementServiceConfiguration.ReadWrite.All"},
+$permtable += @{ Permission = "DeviceManagementConfiguration.Read.All"},
+$permtable += @{ Permission = "DeviceManagementConfiguration.ReadWrite.All"},
+$permtable += @{ Permission = "DeviceManagementApps.Read.All"},
+$permtable += @{ Permission = "DeviceManagementApps.ReadWrite.All"},
+$permtable += @{ Permission = "DeviceManagementRBAC.Read.All"},
+$permtable += @{ Permission = "DeviceManagementRBAC.ReadWrite.All"},
+$permtable += @{ Permission = "DeviceManagementManagedDevices.Read.All"},
+$permtable += @{ Permission = "DeviceManagementManagedDevices.ReadWrite.All"},
+$permtable += @{ Permission = "DeviceManagementManagedDevices.PrivilegedOperations.All"},
+$permtable += @{ Permission = "Mail.Read"},
+$permtable += @{ Permission = "Mail.Read.Shared"},
+$permtable += @{ Permission = "Mail.ReadWrite"},
+$permtable += @{ Permission = "Mail.Send"},
+$permtable += @{ Permission = "MailboxSettings.ReadWrite"},
+$permtable += @{ Permission = "MailboxSettings.Read"},
+$permtable += @{ Permission = "Member.Read.Hidden"},
+$permtable += @{ Permission = "Notes.Create"},
+$permtable += @{ Permission = "Notes.Read"},
+$permtable += @{ Permission = "Notes.Read.All"},
+$permtable += @{ Permission = "Notes.ReadWrite"},
+$permtable += @{ Permission = "Notes.ReadWrite.All"},
+$permtable += @{ Permission = "Notifications.ReadWrite.CreatedByApp"},
+$permtable += @{ Permission = "OnlineMeetings.Read"},
+$permtable += @{ Permission = "OnlineMeetings.ReadWrite"},
+$permtable += @{ Permission = "OnlineMeetings.Read.All"},
+$permtable += @{ Permission = "Organization.Read.All"},
+$permtable += @{ Permission = "Organization.ReadWrite.All"},
+$permtable += @{ Permission = "OrgContact.Read.All"},
+$permtable += @{ Permission = "People.Read"},
+$permtable += @{ Permission = "People.Read.All"},
+$permtable += @{ Permission = "Policy.Read.All"},
+$permtable += @{ Permission = "Policy.ReadWrite.ConditionalAccess"},
+$permtable += @{ Permission = "Policy.ReadWrite.FeatureRollout"},
+$permtable += @{ Permission = "Policy.ReadWrite.TrustFramework"},
+$permtable += @{ Permission = "Presence.Read"},
+$permtable += @{ Permission = "Presence.Read.All"},
+$permtable += @{ Permission = "Reports.Read.All"},
+$permtable += @{ Permission = "RoleManagement.Read.Directory"},
+$permtable += @{ Permission = "RoleManagement.ReadWrite.Directory"},
+$permtable += @{ Permission = "ExternalItem.Read.All"},
+$permtable += @{ Permission = "SecurityEvents.Read.All"},
+$permtable += @{ Permission = "SecurityEvents.ReadWrite.All"},
+$permtable += @{ Permission = "Sites.Read.All"},
+$permtable += @{ Permission = "Sites.ReadWrite.All"},
+$permtable += @{ Permission = "Sites.Manage.All"},
+$permtable += @{ Permission = "Sites.FullControl.All"},
+$permtable += @{ Permission = "Tasks.Read"},
+$permtable += @{ Permission = "Tasks.Read.Shared"},
+$permtable += @{ Permission = "Tasks.ReadWrite"},
+$permtable += @{ Permission = "Tasks.ReadWrite.Shared"},
+$permtable += @{ Permission = "Agreement.Read.All"},
+$permtable += @{ Permission = "Agreement.ReadWrite.All"},
+$permtable += @{ Permission = "AgreementAcceptance.Read"},
+$permtable += @{ Permission = "ThreatAssessment.ReadWrite.All"},
+$permtable += @{ Permission = "ThreatAssessment.Read.All"},
+$permtable += @{ Permission = "User.Read"},
+$permtable += @{ Permission = "User.ReadWrite"},
+$permtable += @{ Permission = "User.ReadBasic.All"},
+$permtable += @{ Permission = "User.Read.All"},
+$permtable += @{ Permission = "User.ReadWrite.All"},
+$permtable += @{ Permission = "UserActivity.ReadWrite.CreatedByApp"},
+$permtable += @{ Permission = "user_impersonation"},
+$permtable += @{ Permission = "full_access_as_user"},
+$permtable += @{ Permission = "full_access_as_app

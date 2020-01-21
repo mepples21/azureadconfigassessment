@@ -1,12 +1,3 @@
-<# 
- .Synopsis
-  Starts the sessions to AzureAD and MSOnline Powershell Modules
-
- .Description
-  This function prompts for authentication against azure AD 
-
-#>
-
 [CmdletBinding()]
 param
 (
@@ -446,3 +437,9 @@ $data | Export-Excel -Path $Path -WorksheetName ConsentGrantData `
         -HideSheet * `
         -UnHideSheet "PermissionsPivotTable" `
         -Show
+
+<# to do list
+
+    - progress indicators
+
+/#>

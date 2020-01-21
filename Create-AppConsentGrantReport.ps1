@@ -430,13 +430,19 @@ $pt = New-PivotTableDefinition -SourceWorkSheet ConsentGrantData `
         -ChartRow 4 `
         -ChartColumn 5
 
-$data | Export-Excel -Path $Path -WorksheetName ConsentGrantData `
+$excel = $data | Export-Excel -Path $Path -WorksheetName ConsentGrantData `
         -PivotTableDefinition $pt `
         -AutoSize `
         -Activate `
         -HideSheet * `
         -UnHideSheet "PermissionsPivotTable" `
-        -Show
+        -PassThru
+
+$sheet = $excel.Workbook.Worksheets["PermissionsPivotTable"]
+Add-ConditionalFormatting -Worksheet $sheet -Range "A1:A1048576" -RuleType Equal -ConditionValue "High"  -ForeGroundColor White -BackgroundColor Red -Bold -Underline
+Add-ConditionalFormatting -Worksheet $sheet -Range "A1:A1048576" -RuleType Equal -ConditionValue "Medium"  -ForeGroundColor Black -BackgroundColor Orange -Bold -Underline
+Add-ConditionalFormatting -Worksheet $sheet -Range "A1:A1048576" -RuleType Equal -ConditionValue "Low"  -ForeGroundColor Black -BackgroundColor Yellow -Bold -Underline
+Export-Excel -ExcelPackage $excel -Show
 
 <# to do list
 

@@ -127,6 +127,7 @@ Function Get-MSCloudIdConsentGrantList
             try {
                 $object = Get-AzureADObjectByObjectId -ObjectId $ObjectId
                 CacheObject -Object $object
+                Write-Progress -Activity "Caching Objects"
             } catch { 
                 Write-Verbose "Object not found."
             }
@@ -145,16 +146,21 @@ Function Get-MSCloudIdConsentGrantList
     
     $Oauth2PermGrants = @()
 
+    $count = 0
     foreach ($sp in $servicePrincipals)
     {
         CacheObject -Object $sp
         $spPermGrants = Get-AzureADServicePrincipalOAuth2PermissionGrant -ObjectId $sp.ObjectId -All $true
         $Oauth2PermGrants += $spPermGrants
+        $count++
+        Write-Progress -activity "Caching Objects from Azure AD . . ." -status "Cached: $count of $($servicePrincipals.Count)" -percentComplete (($count / $servicePrincipals.Count)  * 100)
     }  
 
     # Get one page of User objects and add to the cache
     Write-Verbose "Retrieving User objects..."
-    Get-AzureADUser -Top $PrecacheSize | ForEach-Object { CacheObject -Object $_ }
+    Get-AzureADUser -Top $PrecacheSize | ForEach-Object {
+        CacheObject -Object $_ 
+    }
 
     # Get all existing OAuth2 permission grants, get the client, resource and scope details
     foreach ($grant in $Oauth2PermGrants)
@@ -203,6 +209,7 @@ Function Get-MSCloudIdConsentGrantList
                     "ClientDisplayName" = $client.DisplayName
                     
                     "ResourceObjectId" = $grant.ResourceId
+                    "ResourceObjectIdFilter" = $grant.ResourceId
                     "ResourceDisplayName" = $resource.DisplayName
                     "Permission" = $scope
                     "PermissionFilter" = $scope
@@ -214,6 +221,9 @@ Function Get-MSCloudIdConsentGrantList
                     "Risk" = $Risk
                     "RiskFilter" = $Risk
                 })
+
+                Write-Progress -Activity "Assessing Delegated Permissions..."
+                
             }
         }
     }
@@ -263,6 +273,7 @@ Function Get-MSCloudIdConsentGrantList
                 "ClientDisplayName" = $client.DisplayName
                 
                 "ResourceObjectId" = $assignment.ResourceId
+                "ResourceObjectIdFilter" = $grant.ResourceId
                 "ResourceDisplayName" = $resource.DisplayName
                 "Permission" = $appRole.Value
                 "PermissionFilter" = $appRole.Value
@@ -270,6 +281,9 @@ Function Get-MSCloudIdConsentGrantList
                 "Risk" = $Risk
                 "RiskFilter" = $Risk
             })
+
+            Write-Progress -Activity "Assessing Application Permissions..."
+
         }
     }
 }
@@ -419,7 +433,7 @@ if ($OutputFileExists -eq $true) {
 # Permissions per App Table and Chart
 $pt = New-PivotTableDefinition -SourceWorkSheet ConsentGrantData `
         -PivotTableName "PermissionsPivotTable" `
-        -PivotFilter ConsentType,PrincipalDisplayName,RiskFilter,PermissionFilter `
+        -PivotFilter ConsentType,PrincipalDisplayName,RiskFilter,PermissionFilter,ResourceObjectIdFilter `
         -PivotRows Risk,ResourceDisplayName,Permission `
         -PivotColumns PermissionType `
         -PivotData @{Permission='Count'} `

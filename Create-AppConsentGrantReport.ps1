@@ -2,27 +2,9 @@
 param
 (
     # Interactive sign in using, use this option normally
-    [Parameter(
-        Mandatory=$true,
-        ParameterSetName="Interactive"
-    )]
+    [Parameter(Mandatory=$true)]
     [string]
     $AdminUPN,
-
-    # For use when doing non-interactive sign in or script testing
-    [Parameter(
-        Mandatory=$true,
-        ParameterSetName="NonInteractive"
-    )]
-    [string]
-    $PasswordFilePath,
-
-    [Parameter(
-        Mandatory=$true,
-        ParameterSetName="NonInteractive"
-    )]
-    [string]
-    $Username,
 
     # Output file location
     [Parameter(Mandatory=$true)]
@@ -127,7 +109,6 @@ Function Get-MSCloudIdConsentGrantList
             try {
                 $object = Get-AzureADObjectByObjectId -ObjectId $ObjectId
                 CacheObject -Object $object
-                Write-Progress -Activity "Caching Objects"
             } catch { 
                 Write-Verbose "Object not found."
             }
@@ -146,21 +127,16 @@ Function Get-MSCloudIdConsentGrantList
     
     $Oauth2PermGrants = @()
 
-    $count = 0
     foreach ($sp in $servicePrincipals)
     {
         CacheObject -Object $sp
         $spPermGrants = Get-AzureADServicePrincipalOAuth2PermissionGrant -ObjectId $sp.ObjectId -All $true
         $Oauth2PermGrants += $spPermGrants
-        $count++
-        Write-Progress -activity "Caching Objects from Azure AD . . ." -status "Cached: $count of $($servicePrincipals.Count)" -percentComplete (($count / $servicePrincipals.Count)  * 100)
     }  
 
     # Get one page of User objects and add to the cache
     Write-Verbose "Retrieving User objects..."
-    Get-AzureADUser -Top $PrecacheSize | ForEach-Object {
-        CacheObject -Object $_ 
-    }
+    Get-AzureADUser -Top $PrecacheSize | ForEach-Object { CacheObject -Object $_ }
 
     # Get all existing OAuth2 permission grants, get the client, resource and scope details
     foreach ($grant in $Oauth2PermGrants)
@@ -221,9 +197,6 @@ Function Get-MSCloudIdConsentGrantList
                     "Risk" = $Risk
                     "RiskFilter" = $Risk
                 })
-
-                Write-Progress -Activity "Assessing Delegated Permissions..."
-                
             }
         }
     }
@@ -281,9 +254,6 @@ Function Get-MSCloudIdConsentGrantList
                 "Risk" = $Risk
                 "RiskFilter" = $Risk
             })
-
-            Write-Progress -Activity "Assessing Application Permissions..."
-
         }
     }
 }
@@ -304,9 +274,118 @@ else {
 }
 
 # Create hash table of permissions and permissions risk
-$permsdata = Invoke-WebRequest -Uri https://raw.githubusercontent.com/mepples21/aad_apis/master/permissions.json -UseBasicParsing
 $permstable = @()
-$permstable = $permsdata.Content | ConvertFrom-Json -AsHashtable
+$permstable += @{ "Analytics.Read" = "Low" }
+$permstable += @{ "AdministrativeUnit.Read.All" = "Medium" }
+$permstable += @{ "AdministrativeUnit.ReadWrite.All" = "High" }
+$permstable += @{ "AppCatalog.ReadWrite.All" = "Medium" }
+$permstable += @{ "Application.Read.All" = "Medium" }
+$permstable += @{ "Application.ReadWrite.All" = "High" }
+$permstable += @{ "Application.ReadWrite.OwnedBy" = "Low" }
+$permstable += @{ "Bookings.Read.All" = "Low" }
+$permstable += @{ "Bookings.ReadWrite.Appointments" = "Medium" }
+$permstable += @{ "Bookings.ReadWrite.All" = "Medium" }
+$permstable += @{ "Bookings.Manage" = "Medium" }
+$permstable += @{ "Calendars.Read" = "Low" }
+$permstable += @{ "Calendars.Read.Shared" = "Low" }
+$permstable += @{ "Calendars.ReadWrite" = "Medium" }
+$permstable += @{ "Calendars.Send" = "Medium" }
+$permstable += @{ "Calls.Initiate.All" = "Low" }
+$permstable += @{ "Calls.InitiateGroupCall.All" = "Low" }
+$permstable += @{ "Calls.JoinGroupCall.All" = "Low" }
+$permstable += @{ "Calls.JoinGroupCallasGuest.All" = "Low" }
+$permstable += @{ "Calls.AccessMedia.All" = "Medium" }
+$permstable += @{ "Contacts.Read" = "Low" }
+$permstable += @{ "Contacts.ReadWrite" = "Medium" }
+$permstable += @{ "Device.ReadWrite.All" = "High" }
+$permstable += @{ "Directory.Read.All" = "Medium" }
+$permstable += @{ "Directory.ReadWrite.All" = "High" }
+$permstable += @{ "EduAssignments.Read" = "Low" }
+$permstable += @{ "EduAssignments.ReadWriteBasic" = "Medium" }
+$permstable += @{ "EduRoster.ReadBasic" = "Low" }
+$permstable += @{ "Files.Read" = "Medium" }
+$permstable += @{ "Files.Read.All" = "Medium" }
+$permstable += @{ "Files.ReadWrite" = "High" }
+$permstable += @{ "Files.ReadWrite.All" = "High" }
+$permstable += @{ "Files.ReadWrite.AppFolder" = "Medium" }
+$permstable += @{ "Group.Read.All" = "Low" }
+$permstable += @{ "Group.ReadWrite.All" = "Medium" }
+$permstable += @{ "GroupMember.ReadWrite.All" = "High" }
+$permstable += @{ "Group.Create" = "Medium" }
+$permstable += @{ "IdentityProvider.Read.All" = "Low" }
+$permstable += @{ "IdentityProvider.ReadWrite.All" = "High" }
+$permstable += @{ "DeviceManagementServiceConfiguration.Read.All" = "Low" }
+$permstable += @{ "DeviceManagementServiceConfiguration.ReadWrite.All" = "High" }
+$permstable += @{ "DeviceManagementConfiguration.Read.All" = "Low" }
+$permstable += @{ "DeviceManagementConfiguration.ReadWrite.All" = "High" }
+$permstable += @{ "DeviceManagementApps.Read.All" = "Low" }
+$permstable += @{ "DeviceManagementApps.ReadWrite.All" = "High" }
+$permstable += @{ "DeviceManagementRBAC.Read.All" = "Low" }
+$permstable += @{ "DeviceManagementRBAC.ReadWrite.All" = "High" }
+$permstable += @{ "DeviceManagementManagedDevices.Read.All" = "Low" }
+$permstable += @{ "DeviceManagementManagedDevices.ReadWrite.All" = "High" }
+$permstable += @{ "DeviceManagementManagedDevices.PrivilegedOperations.All" = "High" }
+$permstable += @{ "Mail.Read" = "Medium" }
+$permstable += @{ "Mail.Read.Shared" = "Medium" }
+$permstable += @{ "Mail.ReadWrite" = "High" }
+$permstable += @{ "Mail.Send" = "High" }
+$permstable += @{ "MailboxSettings.ReadWrite" = "High" }
+$permstable += @{ "MailboxSettings.Read" = "Low" }
+$permstable += @{ "Member.Read.Hidden" = "Low" }
+$permstable += @{ "Notes.Create" = "Low" }
+$permstable += @{ "Notes.Read" = "Low" }
+$permstable += @{ "Notes.Read.All" = "Low" }
+$permstable += @{ "Notes.ReadWrite" = "Medium" }
+$permstable += @{ "Notes.ReadWrite.All" = "High" }
+$permstable += @{ "Notifications.ReadWrite.CreatedByApp" = "Low" }
+$permstable += @{ "OnlineMeetings.Read" = "Low" }
+$permstable += @{ "OnlineMeetings.ReadWrite" = "Medium" }
+$permstable += @{ "OnlineMeetings.Read.All" = "Low" }
+$permstable += @{ "Organization.Read.All" = "Medium" }
+$permstable += @{ "Organization.ReadWrite.All" = "High" }
+$permstable += @{ "OrgContact.Read.All" = "Low" }
+$permstable += @{ "People.Read" = "Low" }
+$permstable += @{ "People.Read.All" = "Low" }
+$permstable += @{ "Policy.Read.All" = "Low" }
+$permstable += @{ "Policy.ReadWrite.ConditionalAccess" = "High" }
+$permstable += @{ "Policy.ReadWrite.FeatureRollout" = "Medium" }
+$permstable += @{ "Policy.ReadWrite.TrustFramework" = "Medium" }
+$permstable += @{ "Presence.Read" = "Low" }
+$permstable += @{ "Presence.Read.All" = "Low" }
+$permstable += @{ "Reports.Read.All" = "Low" }
+$permstable += @{ "RoleManagement.Read.Directory" = "Low" }
+$permstable += @{ "RoleManagement.ReadWrite.Directory" = "High" }
+$permstable += @{ "ExternalItem.Read.All" = "Low" }
+$permstable += @{ "SecurityEvents.Read.All" = "Low" }
+$permstable += @{ "SecurityEvents.ReadWrite.All" = "High" }
+$permstable += @{ "Sites.Read.All" = "Medium" }
+$permstable += @{ "Sites.ReadWrite.All" = "High" }
+$permstable += @{ "Sites.Manage.All" = "High" }
+$permstable += @{ "Sites.FullControl.All" = "High" }
+$permstable += @{ "Tasks.Read" = "Low" }
+$permstable += @{ "Tasks.Read.Shared" = "Low" }
+$permstable += @{ "Tasks.ReadWrite" = "Medium" }
+$permstable += @{ "Tasks.ReadWrite.Shared" = "Medium" }
+$permstable += @{ "Agreement.Read.All" = "Low" }
+$permstable += @{ "Agreement.ReadWrite.All" = "Medium" }
+$permstable += @{ "AgreementAcceptance.Read" = "Low" }
+$permstable += @{ "ThreatAssessment.ReadWrite.All" = "Medium" }
+$permstable += @{ "ThreatAssessment.Read.All" = "Low" }
+$permstable += @{ "User.Read" = "Low" }
+$permstable += @{ "User.ReadWrite" = "High" }
+$permstable += @{ "User.ReadBasic.All" = "Low" }
+$permstable += @{ "User.Read.All" = "Low" }
+$permstable += @{ "User.ReadWrite.All" = "High" }
+$permstable += @{ "UserActivity.ReadWrite.CreatedByApp" = "Medium" }
+$permstable += @{ "user_impersonation" = "High" }
+$permstable += @{ "full_access_as_user" = "High" }
+$permstable += @{ "full_access_as_app" = "High" }
+$permstable += @{ "offline_access" = "Low" }
+$permstable += @{ "Directory.AccessAsUser.All" = "High" }
+$permstable += @{ "EAS.AccessAsUser.All" = "High" }
+$permstable += @{ "EWS.AccessAsUser.All" = "High" }
+$permstable += @{ "ActivityFeed.Read" = "Low" }
+$permstable += @{ "ServiceHealth.Read" = "Low" }
 
 Load-Module "AzureAD"
 Load-Module "ImportExcel"

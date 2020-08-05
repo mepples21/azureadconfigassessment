@@ -1,0 +1,41 @@
+Type,Permission,Risk,Reason
+User,Mail,High,Phishing
+User,Contacts,High,Phishing
+User,MailboxSettings,High,Phishing
+User,People,High,Phishing
+User,Files,High,Phishing
+User,Notes,High,Phishing
+User,Directory.AccessAsUser.All,High,Phishing
+User,user_impersonation,High,Phishing
+User,Application.ReadWrite.All,High,Broad impact
+User,Directory.ReadWrite.All,High,Broad impact
+User,Domain.ReadWrite.All,High,Broad impact
+User,EduRoster.ReadWrite.All,High,Broad impact
+User,Group.ReadWrite.All,High,Broad impact
+User,Member.Read.Hidden,High,Broad impact
+User,RoleManagement.ReadWrite.Directory,High,Broad impact
+User,User.ReadWrite.All,High,Broad impact
+User,User.ManageCreds.All,High,Broad impact
+Application,Mail,High,Phishing
+Application,Contacts,High,Phishing
+Application,MailboxSettings,High,Phishing
+Application,People,High,Phishing
+Application,Files,High,Phishing
+Application,Notes,High,Phishing
+Application,Directory.AccessAsUser.All,High,Phishing
+Application,user_impersonation,High,Phishing
+Application,Application.ReadWrite.All,High,Broad impact
+Application,Directory.ReadWrite.All,High,Broad impact
+Application,Domain.ReadWrite.All,High,Broad impact
+Application,EduRoster.ReadWrite.All,High,Broad impact
+Application,Group.ReadWrite.All,High,Broad impact
+Application,Member.Read.Hidden,High,Broad impact
+Application,RoleManagement.ReadWrite.Directory,High,Broad impact
+Application,User.ReadWrite.All,High,Broad impact
+Application,User.ManageCreds.All,High,Broad impact
+User,User.Read,Low,Common pattern
+User,User.ReadBasic.All,Low,Common pattern
+User,open_id,Low,Common pattern
+User,email,Low,Common pattern
+User,profile,Low,Common pattern
+User,offline_access,Low,Common pattern when used with other low permissions

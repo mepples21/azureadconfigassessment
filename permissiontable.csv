@@ -1,4 +1,3 @@
-Permission,Rating
 Analytics.Read,Low
 AdministrativeUnit.Read.All,Medium
 AdministrativeUnit.ReadWrite.All,High

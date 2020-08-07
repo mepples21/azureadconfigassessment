@@ -231,8 +231,8 @@ else {
 }
 
 # Create hash table of permissions and permissions risk
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/mepples21/azureadconfigassessment/master/permissiontable.csv' -OutFile .\output\permissiontable_temp.csv
-$permstable = Import-Csv .\output\permissiontable_temp.csv -Delimiter ','
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/mepples21/azureadconfigassessment/master/permissiontable.csv' -OutFile .\permissiontable.csv
+$permstable = Import-Csv .\permissiontable.csv -Delimiter ','
 
 Load-Module "AzureAD"
 Load-Module "ImportExcel"

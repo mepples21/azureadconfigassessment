@@ -5,9 +5,6 @@
 .PARAMETER AdminUPN
     The user principal name of an administrator in your tenant with at least Global Reader permissions.
 
-.PARAMETER AdminUPN
-    The user principal name of an administrator in your tenant with at least Global Reader permissions.
-
 .PARAMETER Path
     The path to output results to in Excel format.
 

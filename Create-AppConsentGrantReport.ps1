@@ -117,7 +117,6 @@ Function Get-MSCloudIdConsentGrantList
             try {
                 $object = Get-AzureADObjectByObjectId -ObjectId $ObjectId
                 CacheObject -Object $object
-                Write-Progress -Activity "Caching Objects"
             } catch { 
                 Write-Verbose "Object not found."
             }
@@ -151,11 +150,9 @@ Function Get-MSCloudIdConsentGrantList
     Get-AzureADUser -Top $PrecacheSize | ForEach-Object { CacheObject -Object $_ }
 
     # Get all existing OAuth2 permission grants, get the client, resource and scope details
-    $count = 0
+    Write-Progress -Activity "Processing Delegated Permission Grants..."
     foreach ($grant in $Oauth2PermGrants)
     {
-        $count++
-        Write-Progress -Activity "Processing Delegated Permission Grants..." -Status "Processing $count of $($Oauth2PermGrants.count)" -PercentComplete (($count / $Oauth2PermGrants.count) * 100)
         if ($grant.Scope) 
         {
             $grant.Scope.Split(" ") | Where-Object { $_ } | ForEach-Object {               
@@ -168,104 +165,55 @@ Function Get-MSCloudIdConsentGrantList
                     $principalDisplayName = $principal.DisplayName
                 }
 
-                $scopestring = @()
-                $scopearray = @()
-                $scopestring = $grant.Scope.ToString()
-                $scopestring = $scopestring.Trim()
-                $scopearray = $scopestring.split(" ")
-                $risk = $null
-
-                # Evaluate all the scopes
-                foreach ($item in $scopearray) {
-
-                    # Check permission table for an exact match
-                    $risk = $null
-                    $risk = ($permstable | where {$_.Permission -eq "$item" -and $_.Type -eq "Delegated"}).Risk
-
-                    # Search for matching root level permission
-                    if (!$risk) {
-                        # Shorten $item string to do matching search
-                        $itemroot = @()
-                        $itemroot = $item.Split(".")[0]
-                        $risk = ($permstable | where {$_.Permission -eq "$itemroot" -and $_.Type -eq "Delegated"}).Risk
-                    }
-
-                    New-Object PSObject -Property ([ordered]@{
-                        "PermissionType" = $grant.ConsentType
-                        "ClientObjectId" = $grant.ClientId
-                        "ClientDisplayName" = $client.DisplayName
-                        "ResourceObjectId" = $grant.ResourceId
-                        "ResourceObjectIdFilter" = $grant.ResourceId
-                        "ResourceDisplayName" = $resource.DisplayName
-                        "Permission" = $scope
-                        "PermissionFilter" = $scope
-                        "ConsentType" = $grant.ConsentType
-                        "PrincipalObjectId" = $grant.PrincipalId
-                        "PrincipalDisplayName" = $principalDisplayName
-                        "Risk" = $Risk
-                        "RiskFilter" = $Risk
-                    })
+                if ($grant.ConsentType -eq "AllPrincipals") {
+                    $simplifiedgranttype = "AdminConsented"
+                } elseif ($grant.ConsentType -eq "Principal") {
+                    $simplifiedgranttype = "UserConsented"
                 }
+                
+                New-Object PSObject -Property ([ordered]@{
+                    "PermissionType" = $simplifiedgranttype
+                    "ConsentTypeFilter" = $simplifiedgranttype
+                    "ClientObjectId" = $grant.ClientId
+                    "ClientDisplayName" = $client.DisplayName
+                    "ResourceObjectId" = $grant.ResourceId
+                    "ResourceObjectIdFilter" = $grant.ResourceId
+                    "ResourceDisplayName" = $resource.DisplayName
+                    "ResourceDisplayNameFilter" = $resource.DisplayName
+                    "Permission" = $scope
+                    "PermissionFilter" = $scope
+                    "PrincipalObjectId" = $grant.PrincipalId
+                    "PrincipalDisplayName" = $principalDisplayName
+                })
             }
         }
     }
     
     # Iterate over all ServicePrincipal objects and get app permissions
-    Write-Verbose "Retrieving AppRoleAssignments..."
+    Write-Progress -Activity "Processing Application Permission Grants..."
     $script:ObjectByObjectClassId['ServicePrincipal'].GetEnumerator() | ForEach-Object {
         $sp = $_.Value
 
-        # $count = 0
-        # $servicePrincipals = Get-AzureADServicePrincipal  -All $true
-
-        Get-AzureADServiceAppRoleAssignedTo -ObjectId $sp.ObjectId -All $true `
+        Get-AzureADServiceAppRoleAssignedTo -ObjectId $sp.ObjectId  -All $true `
         | Where-Object { $_.PrincipalType -eq "ServicePrincipal" } | ForEach-Object {
-
-            # $count++
-            # Write-Progress -Activity "Processing Application Permission Grants..." -Status "Processing $count of $($ServicePrincipals.count)" -PercentComplete (($count / $ServicePrincipals.count) * 100)
-
             $assignment = $_
             
             $client = GetObjectByObjectId -ObjectId $assignment.PrincipalId
             $resource = GetObjectByObjectId -ObjectId $assignment.ResourceId            
             $appRole = $resource.AppRoles | Where-Object { $_.Id -eq $assignment.Id }
 
-            $scopestring = @()
-            $scopearray = @()
-            $scopestring = $grant.Scope.ToString()
-            $scopestring = $scopestring.Trim()
-            $scopearray = $scopestring.split(" ")
-            $risk = $null
-            foreach ($item in $scopearray) {
-
-                # Check permission table for an exact match
-                $risk = $null
-                $risk = ($permstable | where {$_.Permission -eq "$item" -and $_.Type -eq "Application"}).Risk
-
-                # Search for matching root level permission
-                if (!$risk) {
-                    # Shorten $item string to do matching search
-                    $itemroot = @()
-                    $itemroot = $item.Split(".")[0]
-                    $risk = ($permstable | where {$_.Permission -eq "$itemroot" -and $_.Type -eq "Application"}).Risk
-                }
-                
-                New-Object PSObject -Property ([ordered]@{
-                    "PermissionType" = "Application"
-                    "ClientObjectId" = $assignment.PrincipalId
-                    "ClientDisplayName" = $client.DisplayName
-                    "ResourceObjectId" = $assignment.ResourceId
-                    "ResourceObjectIdFilter" = $grant.ResourceId
-                    "ResourceDisplayName" = $resource.DisplayName
-                    "Permission" = $appRole.Value
-                    "PermissionFilter" = $appRole.Value
-                    "Risk" = $Risk
-                    "RiskFilter" = $Risk
-                })
-            }
-
-            Write-Progress -Activity "Processing Application Permission Grants..."
-
+            New-Object PSObject -Property ([ordered]@{
+                "PermissionType" = "Application"
+                "ClientObjectId" = $assignment.PrincipalId
+                "ClientDisplayName" = $client.DisplayName
+                "ResourceObjectId" = $assignment.ResourceId
+                "ResourceObjectIdFilter" = $grant.ResourceId
+                "ResourceDisplayName" = $resource.DisplayName
+                "ResourceDisplayNameFilter" = $resource.DisplayName
+                "Permission" = $appRole.Value
+                "PermissionFilter" = $appRole.Value
+                "ConsentTypeFilter" = "Application"
+            })
         }
     }
 }
@@ -286,7 +234,7 @@ else {
 }
 
 # Create hash table of permissions and permissions risk
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/mepples21/azureadconfigassessment/master/permstest.csv' -OutFile .\output\permissiontable_temp.csv
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/mepples21/azureadconfigassessment/master/permissiontable.csv' -OutFile .\output\permissiontable_temp.csv
 $permstable = Import-Csv .\output\permissiontable_temp.csv -Delimiter ','
 
 Load-Module "AzureAD"
@@ -295,6 +243,51 @@ Load-Module "ImportExcel"
 Start-MSCloudIdSession -AdminUPN $AdminUPN
 
 $data = Get-MSCloudIdConsentGrantList
+
+# Process Risk for gathered data
+$count = 0
+$data | ForEach-Object {
+
+    $count++
+    Write-Progress -activity "Processing risk for each permission . . ." -status "Processed: $count of $($data.Count)" -percentComplete (($count / $data.Count)  * 100)
+
+    $scope = $_.Permission
+    if ($_.PermissionType -eq "AdminConsented" -or "UserConsented") {
+        $type = "Delegated"
+    } elseif ($_.PermissionType -eq "Application") {
+        $type = "Application"
+    }
+
+    # Check permission table for an exact match
+    $risk = $null
+    $scoperoot = @()
+    $scoperoot = $scope.Split(".")[0]
+    
+    $test = ($permstable | where {$_.Permission -eq "$scoperoot" -and $_.Type -eq $type}).Risk # checking if there is a matching root in the CSV
+    $risk = ($permstable | where {$_.Permission -eq "$scope" -and $_.Type -eq $type}).Risk # Checking for an exact match
+
+    # Search for matching root level permission if there was no exact match
+    if (!$risk -and $test) {
+        # No exact match, but there is a root match
+        $risk = ($permstable | where {$_.Permission -eq "$scoperoot" -and $_.Type -eq $type}).Risk
+    } elseif (!$risk -and !$test -and $type -eq "Application" -and $scope -like "*Write*") {
+        # Application permissions without exact or root matches with write scope
+        $risk = "High"
+    } elseif (!$risk -and !$test -and $type -eq "Application" -and $scope -notlike "*Write*") {
+        # Application permissions without exact or root matches without write scope
+        $risk = "Medium"
+    } elseif ($risk) {
+        
+    } else {
+        # Any permissions without a match, should be primarily Delegated permissions
+        $risk = "Unranked"
+    }
+
+    # Add the risk to the current object
+    Add-Member -InputObject $_ -MemberType NoteProperty -Name Risk -Value $risk
+    Add-Member -InputObject $_ -MemberType NoteProperty -Name RiskFilter -Value $risk
+
+}
 
 # Delete the existing output file if it already exists
 $OutputFileExists = Test-Path $Path
@@ -305,8 +298,8 @@ if ($OutputFileExists -eq $true) {
 # Permissions per App Table and Chart
 $pt = New-PivotTableDefinition -SourceWorkSheet ConsentGrantData `
         -PivotTableName "PermissionsPivotTable" `
-        -PivotFilter PermissionType,PrincipalDisplayName,RiskFilter,PermissionFilter,ResourceObjectIdFilter `
-        -PivotRows Risk,ResourceDisplayName,Permission `
+        -PivotFilter RiskFilter,PermissionFilter,ResourceDisplayNameFilter,ConsentTypeFilter,PrincipalDisplayName `
+        -PivotRows Risk,ClientDisplayName `
         -PivotColumns PermissionType `
         -PivotData @{Permission='Count'} `
         -IncludePivotChart `

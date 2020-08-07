@@ -73,7 +73,7 @@ function Load-Module ($m) {
 
             # If module is not imported, not available on disk, but is in online gallery then install and import
             if (Find-Module -Name $m | Where-Object {$_.Name -eq $m}) {
-                Install-Module -Name $m -Force -Verbose -Scope CurrentUser
+                Install-Module -Name $m -Force -Scope CurrentUser
                 Import-Module $m
             }
             else {
@@ -215,21 +215,6 @@ Function Get-MSCloudIdConsentGrantList
     }
 }
 
-# Check for PowerShell Modules
-if (Get-Module -ListAvailable -Name AzureAD*) {
-} 
-else {
-    Write-Host "Azure AD module not installed, installing..."
-    Install-Module AzureAD
-}
-
-if (Get-Module -ListAvailable -Name ImportExcel) {    
-} 
-else {
-    Write-Host "ImportExcel module not installed, installing..."
-    Install-Module ImportExcel
-}
-
 # Create hash table of permissions and permissions risk
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/mepples21/azureadconfigassessment/master/permissiontable.csv' -OutFile .\permissiontable.csv
 $permstable = Import-Csv .\permissiontable.csv -Delimiter ','
@@ -292,11 +277,39 @@ if ($OutputFileExists -eq $true) {
     Get-ChildItem $Path | Remove-Item -Force
 }
 
-# Permissions per App Table and Chart
+# Pivot table by user
 $pt = New-PivotTableDefinition -SourceWorkSheet ConsentGrantData `
-        -PivotTableName "PermissionsPivotTable" `
+        -PivotTableName "PermissionsByUser" `
+        -PivotFilter RiskFilter,PermissionFilter,ResourceDisplayNameFilter,ConsentTypeFilter,ClientDisplayName `
+        -PivotRows PrincipalDisplayName `
+        -PivotColumns Risk,PermissionType `
+        -PivotData @{Permission='Count'} `
+        -IncludePivotChart `
+        -ChartType ColumnStacked `
+        -ChartHeight 800 `
+        -ChartWidth 1200 `
+        -ChartRow 4 `
+        -ChartColumn 14
+
+# Pivot table by resource
+$pt += New-PivotTableDefinition -SourceWorkSheet ConsentGrantData `
+        -PivotTableName "PermissionsByResource" `
+        -PivotFilter RiskFilter,ResourceDisplayNameFilter,ConsentTypeFilter,PrincipalDisplayName `
+        -PivotRows ResourceDisplayName,PermissionFilter `
+        -PivotColumns Risk,PermissionType `
+        -PivotData @{Permission='Count'} `
+        -IncludePivotChart `
+        -ChartType ColumnStacked `
+        -ChartHeight 800 `
+        -ChartWidth 1200 `
+        -ChartRow 4 `
+        -ChartColumn 14
+
+# Pivot table by risk rating
+$pt += New-PivotTableDefinition -SourceWorkSheet ConsentGrantData `
+        -PivotTableName "PermissionsByRiskRating" `
         -PivotFilter RiskFilter,PermissionFilter,ResourceDisplayNameFilter,ConsentTypeFilter,PrincipalDisplayName `
-        -PivotRows Risk,ClientDisplayName `
+        -PivotRows Risk,ResourceDisplayName `
         -PivotColumns PermissionType `
         -PivotData @{Permission='Count'} `
         -IncludePivotChart `
@@ -306,16 +319,17 @@ $pt = New-PivotTableDefinition -SourceWorkSheet ConsentGrantData `
         -ChartRow 4 `
         -ChartColumn 5
 
+
 $excel = $data | Export-Excel -Path $Path -WorksheetName ConsentGrantData `
         -PivotTableDefinition $pt `
         -AutoSize `
         -Activate `
-        -HideSheet * `
-        -UnHideSheet "PermissionsPivotTable" `
+        -HideSheet "None" `
+        -UnHideSheet "PermissionsByRiskRating" `
         -PassThru
 
-$sheet = $excel.Workbook.Worksheets["PermissionsPivotTable"]
-Add-ConditionalFormatting -Worksheet $sheet -Range "A1:A1048576" -RuleType Equal -ConditionValue "High"  -ForeGroundColor White -BackgroundColor Red -Bold -Underline
-Add-ConditionalFormatting -Worksheet $sheet -Range "A1:A1048576" -RuleType Equal -ConditionValue "Medium"  -ForeGroundColor Black -BackgroundColor Orange -Bold -Underline
-Add-ConditionalFormatting -Worksheet $sheet -Range "A1:A1048576" -RuleType Equal -ConditionValue "Low"  -ForeGroundColor Black -BackgroundColor Yellow -Bold -Underline
+$sheet = $excel.Workbook.Worksheets["PermissionsByRiskRating"]
+Add-ConditionalFormatting -Worksheet $sheet -Range "A1:N1048576" -RuleType Equal -ConditionValue "High"  -ForeGroundColor White -BackgroundColor Red -Bold -Underline
+Add-ConditionalFormatting -Worksheet $sheet -Range "A1:N1048576" -RuleType Equal -ConditionValue "Medium"  -ForeGroundColor Black -BackgroundColor Orange -Bold -Underline
+Add-ConditionalFormatting -Worksheet $sheet -Range "A1:N1048576" -RuleType Equal -ConditionValue "Low"  -ForeGroundColor Black -BackgroundColor Yellow -Bold -Underline
 Export-Excel -ExcelPackage $excel -Show

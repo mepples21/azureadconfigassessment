@@ -279,7 +279,7 @@ if ($OutputFileExists -eq $true) {
 
 $highriskobjects = $data | Where-Object {$_.Risk -eq "High"}
 $highriskusers = $highriskobjects | Where-Object {$_.PrincipalObjectId -ne $null} | Select-Object PrincipalDisplayName,Risk | Sort-Object PrincipalDisplayName -Unique
-$highriskapps = $highriskobjects | Select-Object ResourceDisplayName,Risk | Sort-Object ResourceDisplayName -Unique
+$highriskapps = $highriskobjects | Select-Object ClientDisplayName,Risk | Sort-Object ClientDisplayName -Unique
 
 # Pivot table by user
 $pt = New-PivotTableDefinition -SourceWorkSheet ConsentGrantData `

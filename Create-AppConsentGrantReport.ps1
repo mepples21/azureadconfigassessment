@@ -277,6 +277,10 @@ if ($OutputFileExists -eq $true) {
     Get-ChildItem $Path | Remove-Item -Force
 }
 
+$highriskobjects = $data | Where-Object {$_.Risk -eq "High"}
+$highriskusers = $highriskobjects | Where-Object {$_.PrincipalObjectId -ne $null} | Select-Object PrincipalDisplayName,Risk | Sort-Object PrincipalDisplayName -Unique
+$highriskapps = $highriskobjects | Select-Object ResourceDisplayName,Risk | Sort-Object ResourceDisplayName -Unique
+
 # Pivot table by user
 $pt = New-PivotTableDefinition -SourceWorkSheet ConsentGrantData `
         -PivotTableName "PermissionsByUser" `
@@ -319,7 +323,6 @@ $pt += New-PivotTableDefinition -SourceWorkSheet ConsentGrantData `
         -ChartRow 4 `
         -ChartColumn 5
 
-
 $excel = $data | Export-Excel -Path $Path -WorksheetName ConsentGrantData `
         -PivotTableDefinition $pt `
         -AutoSize `
@@ -328,8 +331,29 @@ $excel = $data | Export-Excel -Path $Path -WorksheetName ConsentGrantData `
         -UnHideSheet "PermissionsByRiskRating" `
         -PassThru
 
-$sheet = $excel.Workbook.Worksheets["PermissionsByRiskRating"]
-Add-ConditionalFormatting -Worksheet $sheet -Range "A1:N1048576" -RuleType Equal -ConditionValue "High"  -ForeGroundColor White -BackgroundColor Red -Bold -Underline
-Add-ConditionalFormatting -Worksheet $sheet -Range "A1:N1048576" -RuleType Equal -ConditionValue "Medium"  -ForeGroundColor Black -BackgroundColor Orange -Bold -Underline
-Add-ConditionalFormatting -Worksheet $sheet -Range "A1:N1048576" -RuleType Equal -ConditionValue "Low"  -ForeGroundColor Black -BackgroundColor Yellow -Bold -Underline
+# Create temporary Excel file and add High Risk Users sheet
+$xlTempFile = "$env:TEMP\ImportExcelTempFile.xlsx"
+Remove-Item $xlTempFile -ErrorAction Ignore
+$exceltemp = $highriskusers | Export-Excel $xlTempFile -PassThru
+Add-Worksheet -ExcelPackage $excel -WorksheetName HighRiskUsers -CopySource $exceltemp.Workbook.Worksheets["Sheet1"]
+
+# Create temporary Excel file and add High Risk Apps sheet
+$xlTempFile = "$env:TEMP\ImportExcelTempFile.xlsx"
+Remove-Item $xlTempFile -ErrorAction Ignore
+$exceltemp = $highriskapps | Export-Excel $xlTempFile -PassThru
+Add-Worksheet -ExcelPackage $excel -WorksheetName HighRiskApps -CopySource $exceltemp.Workbook.Worksheets["Sheet1"] -Activate
+
+$sheet = $excel.Workbook.Worksheets["ConsentGrantData"]
+Add-ConditionalFormatting -Worksheet $sheet -Range "A1:N1048576" -RuleType Equal -ConditionValue "High" -ForeGroundColor White -BackgroundColor Red -Bold -Underline
+Add-ConditionalFormatting -Worksheet $sheet -Range "A1:N1048576" -RuleType Equal -ConditionValue "Medium" -ForeGroundColor Black -BackgroundColor Orange -Bold -Underline
+Add-ConditionalFormatting -Worksheet $sheet -Range "A1:N1048576" -RuleType Equal -ConditionValue "Low" -ForeGroundColor Black -BackgroundColor Yellow -Bold -Underline
+
+$sheet = $excel.Workbook.Worksheets["HighRiskUsers"]
+Add-ConditionalFormatting -Worksheet $sheet -Range "B1:B1048576" -RuleType Equal -ConditionValue "High" -ForeGroundColor White -BackgroundColor Red -Bold -Underline
+Set-ExcelRange -Worksheet $sheet -Range A1:C1048576 -AutoSize
+
+$sheet = $excel.Workbook.Worksheets["HighRiskApps"]
+Add-ConditionalFormatting -Worksheet $sheet -Range "B1:B1048576" -RuleType Equal -ConditionValue "High" -ForeGroundColor White -BackgroundColor Red -Bold -Underline
+Set-ExcelRange -Worksheet $sheet -Range A1:C1048576 -AutoSize
+
 Export-Excel -ExcelPackage $excel -Show

@@ -277,9 +277,27 @@ if ($OutputFileExists -eq $true) {
     Get-ChildItem $Path | Remove-Item -Force
 }
 
+$count = 0
 $highriskobjects = $data | Where-Object {$_.Risk -eq "High"}
+$highriskobjects | ForEach-Object {
+    $userAssignmentRequired = @()
+    $userAssignments = @()
+    $userAssignmentsCount = @()
+    $userAssignmentRequired = Get-AzureADServicePrincipal -ObjectId $_.ClientObjectId
+
+    if ($userAssignmentRequired.AppRoleAssignmentRequired -eq $true) {
+        $userAssignments = Get-AzureADServiceAppRoleAssignment -ObjectId $_.ClientObjectId -All $true
+        $userAssignmentsCount = $userAssignments.count
+        Add-Member -InputObject $_ -MemberType NoteProperty -Name UsersAssignedCount -Value $userAssignmentsCount    
+    } elseif ($userAssignmentRequired.AppRoleAssignmentRequired -eq $false) {
+        $userAssignmentsCount = "AllUsers"
+        Add-Member -InputObject $_ -MemberType NoteProperty -Name UsersAssignedCount -Value $userAssignmentsCount
+    }
+    $count++
+    Write-Progress -activity "Counting users assigned to high risk apps . . ." -status "Apps Counted: $count of $($highriskobjects.Count)" -percentComplete (($count / $highriskobjects.Count)  * 100)
+}
 $highriskusers = $highriskobjects | Where-Object {$_.PrincipalObjectId -ne $null} | Select-Object PrincipalDisplayName,Risk | Sort-Object PrincipalDisplayName -Unique
-$highriskapps = $highriskobjects | Select-Object ClientDisplayName,Risk | Sort-Object ClientDisplayName -Unique
+$highriskapps = $highriskobjects | Select-Object ClientDisplayName,Risk,UsersAssignedCount | Sort-Object ClientDisplayName -Unique | Sort-Object UsersAssignedCount -Descending
 
 # Pivot table by user
 $pt = New-PivotTableDefinition -SourceWorkSheet ConsentGrantData `

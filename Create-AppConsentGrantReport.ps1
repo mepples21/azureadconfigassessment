@@ -155,6 +155,15 @@ Function Get-MSCloudIdConsentGrantList
             $grant.Scope.Split(" ") | Where-Object { $_ } | ForEach-Object {               
                 $scope = $_
                 $client = GetObjectByObjectId -ObjectId $grant.ClientId
+
+                # Determine if the object comes from the Microsoft Services tenant, and flag it if true
+                $MicrosoftRegisteredClientApp = @()
+                if ($client.AppOwnerTenantId -eq "f8cdef31-a31e-4b4a-93e4-5f571e91255a" -or $client.AppOwnerTenantId -eq "72f988bf-86f1-41af-91ab-2d7cd011db47") {
+                    $MicrosoftRegisteredClientApp = $true
+                } else {
+                    $MicrosoftRegisteredClientApp = $false
+                }
+
                 $resource = GetObjectByObjectId -ObjectId $grant.ResourceId
                 $principalDisplayName = ""
                 if ($grant.PrincipalId) {
@@ -181,6 +190,7 @@ Function Get-MSCloudIdConsentGrantList
                     "PermissionFilter" = $scope
                     "PrincipalObjectId" = $grant.PrincipalId
                     "PrincipalDisplayName" = $principalDisplayName
+                    "MicrosoftRegisteredClientApp" = $MicrosoftRegisteredClientApp
                 })
             }
         }
@@ -196,6 +206,15 @@ Function Get-MSCloudIdConsentGrantList
             $assignment = $_
             
             $client = GetObjectByObjectId -ObjectId $assignment.PrincipalId
+
+            # Determine if the object comes from the Microsoft Services tenant, and flag it if true
+            $MicrosoftRegisteredClientApp = @()
+            if ($client.AppOwnerTenantId -eq "f8cdef31-a31e-4b4a-93e4-5f571e91255a" -or $client.AppOwnerTenantId -eq "72f988bf-86f1-41af-91ab-2d7cd011db47") {
+                $MicrosoftRegisteredClientApp = $true
+            } else {
+                $MicrosoftRegisteredClientApp = $false
+            }
+
             $resource = GetObjectByObjectId -ObjectId $assignment.ResourceId            
             $appRole = $resource.AppRoles | Where-Object { $_.Id -eq $assignment.Id }
 
@@ -210,6 +229,7 @@ Function Get-MSCloudIdConsentGrantList
                 "Permission" = $appRole.Value
                 "PermissionFilter" = $appRole.Value
                 "ConsentTypeFilter" = "Application"
+                "MicrosoftRegisteredClientApp" = $MicrosoftRegisteredClientApp
             })
         }
     }
@@ -268,7 +288,7 @@ $data | ForEach-Object {
     # Add the risk to the current object
     Add-Member -InputObject $_ -MemberType NoteProperty -Name Risk -Value $risk
     Add-Member -InputObject $_ -MemberType NoteProperty -Name RiskFilter -Value $risk
-
+    Add-Member -InputObject $_ -MemberType NoteProperty -Name Reason -Value $reason
 }
 
 # Delete the existing output file if it already exists
@@ -293,16 +313,17 @@ $highriskobjects | ForEach-Object {
         $userAssignmentsCount = "AllUsers"
         Add-Member -InputObject $_ -MemberType NoteProperty -Name UsersAssignedCount -Value $userAssignmentsCount
     }
+
     $count++
     Write-Progress -activity "Counting users assigned to high risk apps . . ." -status "Apps Counted: $count of $($highriskobjects.Count)" -percentComplete (($count / $highriskobjects.Count)  * 100)
 }
 $highriskusers = $highriskobjects | Where-Object {$_.PrincipalObjectId -ne $null} | Select-Object PrincipalDisplayName,Risk | Sort-Object PrincipalDisplayName -Unique
-$highriskapps = $highriskobjects | Select-Object ClientDisplayName,Risk,UsersAssignedCount | Sort-Object ClientDisplayName -Unique | Sort-Object UsersAssignedCount -Descending
+$highriskapps = $highriskobjects | Select-Object ClientDisplayName,Risk,UsersAssignedCount,MicrosoftRegisteredClientApp | Sort-Object ClientDisplayName -Unique | Sort-Object UsersAssignedCount -Descending
 
 # Pivot table by user
 $pt = New-PivotTableDefinition -SourceWorkSheet ConsentGrantData `
         -PivotTableName "PermissionsByUser" `
-        -PivotFilter RiskFilter,PermissionFilter,ResourceDisplayNameFilter,ConsentTypeFilter,ClientDisplayName `
+        -PivotFilter RiskFilter,PermissionFilter,ResourceDisplayNameFilter,ConsentTypeFilter,ClientDisplayName,MicrosoftRegisteredClientApp `
         -PivotRows PrincipalDisplayName `
         -PivotColumns Risk,PermissionType `
         -PivotData @{Permission='Count'} `
@@ -316,7 +337,7 @@ $pt = New-PivotTableDefinition -SourceWorkSheet ConsentGrantData `
 # Pivot table by resource
 $pt += New-PivotTableDefinition -SourceWorkSheet ConsentGrantData `
         -PivotTableName "PermissionsByResource" `
-        -PivotFilter RiskFilter,ResourceDisplayNameFilter,ConsentTypeFilter,PrincipalDisplayName `
+        -PivotFilter RiskFilter,ResourceDisplayNameFilter,ConsentTypeFilter,PrincipalDisplayName,MicrosoftRegisteredClientApp `
         -PivotRows ResourceDisplayName,PermissionFilter `
         -PivotColumns Risk,PermissionType `
         -PivotData @{Permission='Count'} `
@@ -330,7 +351,7 @@ $pt += New-PivotTableDefinition -SourceWorkSheet ConsentGrantData `
 # Pivot table by risk rating
 $pt += New-PivotTableDefinition -SourceWorkSheet ConsentGrantData `
         -PivotTableName "PermissionsByRiskRating" `
-        -PivotFilter RiskFilter,PermissionFilter,ResourceDisplayNameFilter,ConsentTypeFilter,PrincipalDisplayName `
+        -PivotFilter RiskFilter,PermissionFilter,ResourceDisplayNameFilter,ConsentTypeFilter,PrincipalDisplayName,MicrosoftRegisteredClientApp `
         -PivotRows Risk,ResourceDisplayName `
         -PivotColumns PermissionType `
         -PivotData @{Permission='Count'} `

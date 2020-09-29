@@ -172,9 +172,9 @@ Function Get-MSCloudIdConsentGrantList
                 }
 
                 if ($grant.ConsentType -eq "AllPrincipals") {
-                    $simplifiedgranttype = "AdminConsented"
+                    $simplifiedgranttype = "Delegated-AllPrincipals"
                 } elseif ($grant.ConsentType -eq "Principal") {
-                    $simplifiedgranttype = "UserConsented"
+                    $simplifiedgranttype = "Delegated-Principal"
                 }
                 
                 New-Object PSObject -Property ([ordered]@{
@@ -254,7 +254,7 @@ $data | ForEach-Object {
     Write-Progress -activity "Processing risk for each permission . . ." -status "Processed: $count of $($data.Count)" -percentComplete (($count / $data.Count)  * 100)
 
     $scope = $_.Permission
-    if ($_.PermissionType -eq "AdminConsented" -or "UserConsented") {
+    if ($_.PermissionType -eq "Delegated-AllPrincipals" -or "Delegated-Principal") {
         $type = "Delegated"
     } elseif ($_.PermissionType -eq "Application") {
         $type = "Application"

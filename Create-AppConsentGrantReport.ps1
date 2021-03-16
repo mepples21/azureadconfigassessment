@@ -39,6 +39,12 @@ param
     [string]
     $Username,
 
+    [Parameter(
+        Mandatory=$false
+    )]
+    [string]
+    $PermissionTablePath,
+
     # Output file location
     [Parameter(Mandatory=$true)]
     [string]
@@ -235,9 +241,14 @@ Function Get-MSCloudIdConsentGrantList
     }
 }
 
-# Create hash table of permissions and permissions risk
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/mepples21/azureadconfigassessment/master/permissiontable.csv' -OutFile .\permissiontable.csv
-$permstable = Import-Csv .\permissiontable.csv -Delimiter ','
+# If the user has specified a local path for the permissions table then use it. If they have not specified a path then download the permissions table from GitHub.
+if ($PermissionTablePath) {
+    $permstable = Import-Csv -Path $PermissionTablePath -Delimiter ','
+} else {
+    # Download hash table of permissions and permissions risk from GitHub
+    Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/mepples21/azureadconfigassessment/master/permissiontable.csv' -OutFile .\permissiontable.csv
+    $permstable = Import-Csv -Path .\permissiontable.csv -Delimiter ','
+}
 
 Load-Module "AzureAD"
 Load-Module "ImportExcel"
@@ -265,13 +276,13 @@ $data | ForEach-Object {
     $scoperoot = @()
     $scoperoot = $scope.Split(".")[0]
     
-    $test = ($permstable | where {$_.Permission -eq "$scoperoot" -and $_.Type -eq $type}).Risk # checking if there is a matching root in the CSV
-    $risk = ($permstable | where {$_.Permission -eq "$scope" -and $_.Type -eq $type}).Risk # Checking for an exact match
+    $test = ($permstable | Where-Object {$_.Permission -eq "$scoperoot" -and $_.Type -eq $type}).Risk # checking if there is a matching root in the CSV
+    $risk = ($permstable | Where-Object {$_.Permission -eq "$scope" -and $_.Type -eq $type}).Risk # Checking for an exact match
 
     # Search for matching root level permission if there was no exact match
     if (!$risk -and $test) {
         # No exact match, but there is a root match
-        $risk = ($permstable | where {$_.Permission -eq "$scoperoot" -and $_.Type -eq $type}).Risk
+        $risk = ($permstable | Where-Object {$_.Permission -eq "$scoperoot" -and $_.Type -eq $type}).Risk
     } elseif (!$risk -and !$test -and $type -eq "Application" -and $scope -like "*Write*") {
         # Application permissions without exact or root matches with write scope
         $risk = "High"
